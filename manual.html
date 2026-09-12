@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridMind AI — Manual Input</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;--surface:#0d1422;--surface2:#111b2e;
+  --border:rgba(255,255,255,.07);
+  --solar:#f5c542;--battery:#3ecf8e;--grid:#e05a5a;--demand:#7c9fff;
+  --text:#e8edf5;--muted:#6b7a99;--accent:#3b82f6;
+  --font-head:'Space Grotesk',sans-serif;--font-body:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;min-height:100vh}
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:60px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-size:18px;font-weight:700}
+.nav-brand .dot{width:9px;height:9px;border-radius:50%;background:var(--battery);box-shadow:0 0 10px var(--battery);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}}
+.nav-links{display:flex;gap:4px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 14px;border-radius:6px;transition:color .2s,background .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--surface2)}
+.page{max-width:720px;margin:0 auto;padding:32px 24px}
+h1{font-family:var(--font-head);font-size:28px;font-weight:700;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:32px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px;margin-bottom:20px}
+.card-title{font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card-desc{font-size:13px;color:var(--muted);margin-bottom:22px}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.input-group{display:flex;flex-direction:column;gap:6px}
+.input-label{font-size:12px;font-weight:500;color:var(--muted)}
+.input-field{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:11px 14px;
+  color:var(--text);font-family:var(--font-body);font-size:15px;
+  outline:none;transition:border-color .2s;
+}
+.input-field:focus{border-color:var(--accent)}
+.input-field::placeholder{color:var(--muted)}
+.input-unit{font-size:12px;color:var(--muted);margin-top:3px}
+.btn{padding:13px 24px;font-size:14px;font-weight:600;font-family:var(--font-head);border:none;border-radius:8px;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-danger{background:rgba(224,90,90,.15);color:var(--grid);border:1px solid rgba(224,90,90,.3)}
+.btn-danger:hover{background:rgba(224,90,90,.25)}
+.btn-row{display:flex;gap:10px;align-items:center}
+.status-box{margin-top:14px;padding:12px 16px;border-radius:8px;font-size:13px}
+.status-box.ok{background:rgba(62,207,142,.1);color:var(--battery);border:1px solid rgba(62,207,142,.2)}
+.status-box.err{background:rgba(224,90,90,.1);color:var(--grid);border:1px solid rgba(224,90,90,.2)}
+
+/* Totals display */
+.totals-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:22px}
+.total-box{background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border)}
+.total-val{font-family:var(--font-head);font-size:26px;font-weight:700;color:var(--battery)}
+.total-label{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* Log table */
+.log-table{width:100%;border-collapse:collapse;font-size:13px}
+.log-table th{text-align:left;padding:8px 12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);font-size:11px}
+.log-table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.log-table tr:last-child td{border-bottom:none}
+.log-table tbody tr:hover{background:var(--surface2)}
+
+/* Type selector */
+.type-tabs{display:flex;gap:6px;margin-bottom:18px}
+.type-tab{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.type-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.08)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand"><div class="dot"></div>GridMind AI</div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="controller.html">Remote Control</a>
+    <a href="manual.html" class="active">Manual Input</a>
+  </div>
+</nav>
+
+<div class="page">
+  <h1>Manual Input</h1>
+  <p class="subtitle">Log electricity consumption and water usage manually — meter readings, bills, or sensor data</p>
+
+  <!-- Running totals -->
+  <div class="card">
+    <div class="card-title">📊 Running Totals (This Session)</div>
+    <div class="totals-grid">
+      <div class="total-box">
+        <div class="total-val" id="totalElec">0</div>
+        <div class="total-label">kWh electricity logged</div>
+      </div>
+      <div class="total-box">
+        <div class="total-val" id="totalWater" style="color:var(--demand)">0</div>
+        <div class="total-label">litres water logged</div>
+      </div>
+      <div class="total-box">
+        <div class="total-val" id="totalEntries" style="color:var(--solar)">0</div>
+        <div class="total-label">entries recorded</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log entry form -->
+  <div class="card">
+    <div class="card-title">➕ Log New Entry</div>
+    <p class="card-desc">Enter a meter reading, bill figure, or manual sensor value. Both fields are optional — fill in one or both.</p>
+
+    <!-- Source selector -->
+    <div class="type-tabs">
+      <button class="type-tab active" onclick="setSource('Meter Reading', this)">🔌 Meter Reading</button>
+      <button class="type-tab" onclick="setSource('Bill Entry', this)">🧾 Bill Entry</button>
+      <button class="type-tab" onclick="setSource('Manual Sensor', this)">📡 Manual Sensor</button>
+      <button class="type-tab" onclick="setSource('Other', this)">📝 Other</button>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Electricity consumed</label>
+        <input class="input-field" type="number" id="elecInput" placeholder="e.g. 12.5" min="0" step="0.01">
+        <div class="input-unit">kilowatt-hours (kWh)</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Water consumed</label>
+        <input class="input-field" type="number" id="waterInput" placeholder="e.g. 200" min="0" step="1">
+        <div class="input-unit">litres</div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label class="input-label">Location / Area (optional)</label>
+        <input class="input-field" type="text" id="locationInput" placeholder="e.g. Block A, Lab 2, Canteen">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Notes (optional)</label>
+        <input class="input-field" type="text" id="notesInput" placeholder="e.g. After AC tune-up">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitEntry()">Log Entry</button>
+      <button class="btn btn-danger" onclick="resetTotals()">Reset Totals</button>
+    </div>
+
+    <div id="formStatus" style="display:none" class="status-box"></div>
+  </div>
+
+  <!-- History log -->
+  <div class="card">
+    <div class="card-title">📋 Entry History</div>
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Source</th>
+          <th>Electricity</th>
+          <th>Water</th>
+          <th>Location</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="logBody">
+        <tr>
+          <td colspan="6" style="color:var(--muted);text-align:center;padding:20px">
+            No entries yet — log your first reading above
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let source = "Meter Reading";
+let entryCount = 0;
+let localElec = 0, localWater = 0;
+const log = [];
+
+function setSource(s, el) {
+  source = s;
+  document.querySelectorAll(".type-tab").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+}
+
+async function submitEntry() {
+  const kwh    = parseFloat(document.getElementById("elecInput").value)  || 0;
+  const liters = parseFloat(document.getElementById("waterInput").value) || 0;
+  const loc    = document.getElementById("locationInput").value.trim();
+  const notes  = document.getElementById("notesInput").value.trim();
+
+  if (kwh === 0 && liters === 0) {
+    showStatus("⚠️ Enter at least one value (electricity or water) before logging.", "err");
+    return;
+  }
+
+  // Post to backend
+  let backendOk = false;
+  try {
+    const res  = await fetch(API + "/manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ electricity_kwh: kwh, water_liters: liters })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      backendOk = true;
+      document.getElementById("totalElec").textContent  = data.totals.electricity_kwh.toFixed(1);
+      document.getElementById("totalWater").textContent = data.totals.water_liters.toFixed(0);
+    }
+  } catch(e) {
+    // Backend offline — still log locally
+  }
+
+  // Update local totals
+  localElec  += kwh;
+  localWater += liters;
+  entryCount++;
+
+  if (!backendOk) {
+    document.getElementById("totalElec").textContent  = localElec.toFixed(1);
+    document.getElementById("totalWater").textContent = localWater.toFixed(0);
+  }
+  document.getElementById("totalEntries").textContent = entryCount;
+
+  // Add to log
+  const now = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  log.unshift({ time: now, source, kwh, liters, loc, notes });
+  renderLog();
+
+  // Clear fields
+  document.getElementById("elecInput").value  = "";
+  document.getElementById("waterInput").value = "";
+  document.getElementById("locationInput").value = "";
+  document.getElementById("notesInput").value = "";
+
+  const msg = [
+    kwh    > 0 ? `${kwh} kWh electricity` : null,
+    liters > 0 ? `${liters} L water` : null,
+  ].filter(Boolean).join(" + ");
+
+  showStatus(`✅ Logged: ${msg}${backendOk ? "" : " (saved locally — backend offline)"}`, "ok");
+}
+
+function renderLog() {
+  const tbody = document.getElementById("logBody");
+  if (log.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No entries yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = log.map(e => `
+    <tr>
+      <td style="color:var(--muted)">${e.time}</td>
+      <td>${e.source}</td>
+      <td style="color:var(--solar)">${e.kwh > 0 ? e.kwh.toFixed(2) + " kWh" : "—"}</td>
+      <td style="color:var(--demand)">${e.liters > 0 ? e.liters + " L" : "—"}</td>
+      <td style="color:var(--muted)">${e.loc || "—"}</td>
+      <td style="color:var(--muted)">${e.notes || "—"}</td>
+    </tr>
+  `).join("");
+}
+
+async function resetTotals() {
+  if (!confirm("Reset all running totals? Entry history will be cleared.")) return;
+  try {
+    await fetch(API + "/reset_manual", { method: "POST" });
+  } catch(e) {}
+  localElec = 0; localWater = 0; entryCount = 0;
+  log.length = 0;
+  document.getElementById("totalElec").textContent  = "0";
+  document.getElementById("totalWater").textContent = "0";
+  document.getElementById("totalEntries").textContent = "0";
+  renderLog();
+  showStatus("Totals and history cleared.", "ok");
+}
+
+function showStatus(msg, type) {
+  const box = document.getElementById("formStatus");
+  box.textContent  = msg;
+  box.className    = "status-box " + type;
+  box.style.display = "block";
+  setTimeout(() => { box.style.display = "none"; }, 4000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridMind AI — Remote Controller</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;--surface:#0d1422;--surface2:#111b2e;
+  --border:rgba(255,255,255,.07);
+  --solar:#f5c542;--battery:#3ecf8e;--grid:#e05a5a;--demand:#7c9fff;
+  --text:#e8edf5;--muted:#6b7a99;--accent:#3b82f6;
+  --font-head:'Space Grotesk',sans-serif;--font-body:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;min-height:100vh}
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:60px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:10px;font-family:var(--font-head);font-size:18px;font-weight:700}
+.nav-brand .dot{width:9px;height:9px;border-radius:50%;background:var(--battery);box-shadow:0 0 10px var(--battery);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}}
+.nav-links{display:flex;gap:4px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 14px;border-radius:6px;transition:color .2s,background .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--surface2)}
+.page{max-width:900px;margin:0 auto;padding:32px 24px}
+h1{font-family:var(--font-head);font-size:28px;font-weight:700;margin-bottom:6px}
+.subtitle{color:var(--muted);font-size:14px;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px}
+.card-title{font-family:var(--font-head);font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.control-row{margin-bottom:20px}
+.control-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;font-weight:500}
+.control-val{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--accent)}
+input[type=range]{width:100%;appearance:none;height:6px;border-radius:3px;background:var(--surface2);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(59,130,246,.4);cursor:pointer}
+.btn{width:100%;padding:14px;font-size:15px;font-weight:600;font-family:var(--font-head);border:none;border-radius:10px;cursor:pointer;transition:all .2s;margin-top:8px}
+.btn-send{background:var(--battery);color:#0a1a12}
+.btn-send:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-reset{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.btn-reset:hover{color:var(--text)}
+.status-box{margin-top:16px;padding:12px 16px;border-radius:8px;font-size:13px;text-align:center;background:var(--surface2)}
+.status-box.ok{background:rgba(62,207,142,.1);color:var(--battery);border:1px solid rgba(62,207,142,.2)}
+.status-box.err{background:rgba(224,90,90,.1);color:var(--grid);border:1px solid rgba(224,90,90,.2)}
+/* Load switches */
+.switch-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.switch-card{background:var(--surface2);border-radius:8px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border)}
+.switch-info{display:flex;align-items:center;gap:10px}
+.switch-icon{font-size:20px}
+.switch-name{font-size:13px;font-weight:500}
+.switch-kw{font-size:11px;color:var(--muted)}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:22px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:white;bottom:3px;left:3px;transition:.3s}
+.toggle input:checked + .toggle-slider{background:var(--battery)}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px)}
+/* AC Stepper */
+.stepper{display:flex;align-items:center;gap:12px;margin-top:12px}
+.step-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.step-btn:hover{border-color:var(--accent);color:var(--accent)}
+.step-val{font-family:var(--font-head);font-size:22px;font-weight:700;flex:1;text-align:center;color:var(--accent)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand"><div class="dot"></div>GridMind AI</div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="controller.html" class="active">Remote Control</a>
+    <a href="manual.html">Manual Input</a>
+  </div>
+</nav>
+
+<div class="page">
+  <h1>Remote Controller</h1>
+  <p class="subtitle">Send direct commands to the building energy management system</p>
+
+  <div class="grid">
+
+    <!-- EV & Pump switches -->
+    <div class="card">
+      <div class="card-title">⚡ Load Switches</div>
+      <div class="switch-grid">
+        <div class="switch-card">
+          <div class="switch-info">
+            <div class="switch-icon">🚗</div>
+            <div>
+              <div class="switch-name">EV Charger</div>
+              <div class="switch-kw">4.0 kW — Flexible</div>
+            </div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="evSwitch" checked onchange="toggle('ev', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-card">
+          <div class="switch-info">
+            <div class="switch-icon">💧</div>
+            <div>
+              <div class="switch-name">Water Pump</div>
+              <div class="switch-kw">2.0 kW — Important</div>
+            </div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="pumpSwitch" checked onchange="toggle('pump', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-card">
+          <div class="switch-info">
+            <div class="switch-icon">💡</div>
+            <div>
+              <div class="switch-name">Lighting</div>
+              <div class="switch-kw">1.2 kW — Flexible</div>
+            </div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="lightSwitch" checked onchange="toggle('light', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="switch-card">
+          <div class="switch-info">
+            <div class="switch-icon">🖥️</div>
+            <div>
+              <div class="switch-name">Server Room</div>
+              <div class="switch-kw">0.8 kW — Critical</div>
+            </div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" checked disabled>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- AC Control -->
+    <div class="card">
+      <div class="card-title">❄️ AC System Control</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+        Adjust AC load in 0.5 kW increments. Lower during solar peaks to maximise renewable utilisation.
+      </p>
+      <div style="text-align:center;margin-bottom:8px;font-size:12px;color:var(--muted)">Current load</div>
+      <div class="stepper">
+        <button class="step-btn" onclick="adjustAC(-1)">−</button>
+        <div class="step-val" id="acDisplay">5.0 kW</div>
+        <button class="step-btn" onclick="adjustAC(1)">+</button>
+      </div>
+      <div style="height:6px;border-radius:3px;background:var(--surface2);margin-top:16px;overflow:hidden">
+        <div id="acBar" style="height:100%;border-radius:3px;background:var(--demand);width:50%;transition:.4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+        <span>0 kW</span><span>10 kW max</span>
+      </div>
+    </div>
+
+    <!-- Flight-style controls (Throttle, Pitch, Roll, Yaw) -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">🎮 UAV Simulator Controls</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="control-row">
+          <div class="control-label">
+            <span>Throttle</span>
+            <span class="control-val" id="throttleVal">0%</span>
+          </div>
+          <input type="range" id="throttle" min="0" max="100" value="0" oninput="update('throttle')">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Pitch</span>
+            <span class="control-val" id="pitchVal">0°</span>
+          </div>
+          <input type="range" id="pitch" min="-30" max="30" value="0" oninput="update('pitch')">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Roll</span>
+            <span class="control-val" id="rollVal">0°</span>
+          </div>
+          <input type="range" id="roll" min="-30" max="30" value="0" oninput="update('roll')">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Yaw</span>
+            <span class="control-val" id="yawVal">0°</span>
+          </div>
+          <input type="range" id="yaw" min="-180" max="180" value="0" oninput="update('yaw')">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+        <button class="btn btn-send" onclick="sendCommand()">Send Command</button>
+        <button class="btn btn-reset" onclick="resetAll()">Reset All</button>
+      </div>
+
+      <div id="cmdStatus" class="status-box">Waiting for command…</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let acLevel = 5.0;
+
+function update(id) {
+  const el = document.getElementById(id);
+  const suffix = id === "throttle" ? "%" : "°";
+  document.getElementById(id + "Val").textContent = el.value + suffix;
+}
+
+function adjustAC(dir) {
+  acLevel = Math.min(10, Math.max(0, acLevel + dir * 0.5));
+  document.getElementById("acDisplay").textContent = acLevel.toFixed(1) + " kW";
+  document.getElementById("acBar").style.width = (acLevel / 10 * 100) + "%";
+  fetch(API + "/command", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: dir > 0 ? "ac_increase" : "ac_decrease" })
+  });
+}
+
+async function toggle(device, on) {
+  const action = device + (on ? "_on" : "_off");
+  try {
+    await fetch(API + "/command", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action })
+    });
+  } catch(e) {}
+}
+
+async function sendCommand() {
+  const payload = {
+    throttle: Number(document.getElementById("throttle").value),
+    pitch:    Number(document.getElementById("pitch").value),
+    roll:     Number(document.getElementById("roll").value),
+    yaw:      Number(document.getElementById("yaw").value),
+  };
+  try {
+    await fetch(API + "/command", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "uav_command", value: payload })
+    });
+    const box = document.getElementById("cmdStatus");
+    box.textContent = `✅ Command sent — Throttle ${payload.throttle}% | Pitch ${payload.pitch}° | Roll ${payload.roll}° | Yaw ${payload.yaw}°`;
+    box.className = "status-box ok";
+  } catch(e) {
+    const box = document.getElementById("cmdStatus");
+    box.textContent = "❌ Cannot connect to API — is the backend running?";
+    box.className = "status-box err";
+  }
+}
+
+function resetAll() {
+  ["throttle","pitch","roll","yaw"].forEach(id => {
+    document.getElementById(id).value = 0;
+    update(id);
+  });
+  document.getElementById("cmdStatus").textContent = "All controls reset.";
+  document.getElementById("cmdStatus").className = "status-box";
+}
+</script>
+</body>
+</html>

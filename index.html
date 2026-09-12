@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridMind AI — Autonomous Energy Orchestration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ── Reset & tokens ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #080c14;
+  --surface:    #0d1422;
+  --surface2:   #111b2e;
+  --border:     rgba(255,255,255,.07);
+  --solar:      #f5c542;
+  --battery:    #3ecf8e;
+  --grid:       #e05a5a;
+  --demand:     #7c9fff;
+  --text:       #e8edf5;
+  --muted:      #6b7a99;
+  --accent:     #3b82f6;
+  --accent-glow:rgba(59,130,246,.25);
+  --font-head:  'Space Grotesk', sans-serif;
+  --font-body:  'Inter', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Layout ─────────────────────────────────────── */
+.app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.nav-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -.3px;
+}
+
+.nav-brand .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--battery);
+  box-shadow: 0 0 10px var(--battery);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .6; transform: scale(.8); }
+}
+
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  color: var(--muted); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 6px;
+  transition: color .2s, background .2s;
+}
+.nav-links a:hover,
+.nav-links a.active { color: var(--text); background: var(--surface2); }
+
+.nav-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--muted);
+}
+
+.live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--battery);
+  box-shadow: 0 0 8px var(--battery);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 320px;
+  grid-template-rows: auto auto auto auto;
+  gap: 16px;
+  padding: 20px 24px 32px;
+  align-items: start;
+}
+
+/* ── Cards ──────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+
+.card-label {
+  font-size: 11px; font-weight: 500;
+  color: var(--muted); letter-spacing: .06em;
+  text-transform: none; margin-bottom: 6px;
+}
+
+.card-value {
+  font-family: var(--font-head);
+  font-size: 32px; font-weight: 700;
+  letter-spacing: -1px; line-height: 1;
+}
+
+.card-sub {
+  font-size: 12px; color: var(--muted); margin-top: 4px;
+}
+
+.card-bar {
+  height: 4px; border-radius: 2px;
+  background: var(--surface2); margin-top: 14px; overflow: hidden;
+}
+.card-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .8s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Status ring ─────────────────────────────────── */
+.energy-status {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+/* ── Flow diagram ────────────────────────────────── */
+.flow-section {
+  grid-column: 1 / 4;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.section-title {
+  font-family: var(--font-head);
+  font-size: 15px; font-weight: 600;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title-icon { font-size: 16px; }
+
+.flow-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.flow-sources, .flow-loads {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.flow-node {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.flow-node-name {
+  display: flex; align-items: center; gap: 8px; font-weight: 500;
+}
+
+.flow-node-val {
+  font-family: var(--font-head);
+  font-size: 14px; font-weight: 600;
+}
+
+.flow-arrow {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  color: var(--muted); font-size: 20px;
+}
+
+.flow-center-node {
+  background: linear-gradient(135deg, #1a2540, #1e2d4a);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.flow-center-label {
+  font-size: 10px; color: var(--muted); font-weight: 500;
+  letter-spacing: .05em;
+}
+
+.flow-center-val {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── AI Decisions panel ──────────────────────────── */
+.ai-panel {
+  grid-column: 4;
+  grid-row: 2 / 5;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.ai-header {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.ai-badge {
+  font-size: 9px; font-weight: 600;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px; padding: 2px 7px;
+  letter-spacing: .08em;
+}
+
+.ai-decision-card {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 13px 14px;
+  border-left: 3px solid var(--battery);
+  transition: border-color .3s;
+}
+
+.ai-decision-card.alert { border-left-color: var(--grid); }
+.ai-decision-card.warning { border-left-color: var(--solar); }
+
+.decision-action {
+  font-size: 13px; font-weight: 600; margin-bottom: 4px;
+  line-height: 1.3;
+}
+.decision-reason {
+  font-size: 11.5px; color: var(--muted); line-height: 1.4;
+  margin-bottom: 6px;
+}
+.decision-savings {
+  font-size: 11px; color: var(--battery); font-weight: 600;
+}
+
+.no-decisions {
+  text-align: center; color: var(--muted);
+  font-size: 12px; padding: 20px;
+}
+
+/* ── Savings summary ─────────────────────────────── */
+.savings-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.savings-pill {
+  background: var(--surface2);
+  border-radius: 8px; padding: 10px 12px; text-align: center;
+}
+
+.savings-pill-val {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 700;
+  color: var(--battery);
+}
+
+.savings-pill-label {
+  font-size: 10px; color: var(--muted); margin-top: 2px;
+}
+
+/* ── Charts ──────────────────────────────────────── */
+.charts-section {
+  grid-column: 1 / 4;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.chart-tabs {
+  display: flex; gap: 4px; margin-bottom: 16px;
+}
+
+.chart-tab {
+  font-size: 12px; font-weight: 500;
+  padding: 5px 14px; border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+}
+
+.chart-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+canvas { width: 100% !important; }
+
+/* ── Loads section ───────────────────────────────── */
+.loads-section {
+  grid-column: 1 / 4;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.loads-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.load-card {
+  background: var(--surface2);
+  border-radius: 8px; padding: 14px;
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+  cursor: pointer; transition: border-color .2s;
+}
+
+.load-card:hover { border-color: var(--accent); }
+
+.load-card.critical { border-left: 3px solid var(--grid); }
+.load-card.important { border-left: 3px solid var(--solar); }
+.load-card.flexible { border-left: 3px solid var(--battery); }
+
+.load-icon { font-size: 22px; }
+.load-name { font-size: 12px; font-weight: 500; }
+.load-kw {
+  font-family: var(--font-head);
+  font-size: 16px; font-weight: 700;
+}
+
+.load-priority {
+  font-size: 10px; font-weight: 500;
+  padding: 2px 7px; border-radius: 4px; width: fit-content;
+}
+.load-priority.critical { background: rgba(224,90,90,.15); color: var(--grid); }
+.load-priority.important { background: rgba(245,197,66,.15); color: var(--solar); }
+.load-priority.flexible { background: rgba(62,207,142,.15); color: var(--battery); }
+
+.load-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── Toggle switch ───────────────────────────────── */
+.toggle {
+  position: relative; width: 36px; height: 20px;
+  cursor: pointer;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: 20px;
+  transition: .3s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: white; bottom: 3px; left: 3px;
+  transition: .3s;
+}
+.toggle input:checked + .toggle-slider { background: var(--battery); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+/* ── Health score ─────────────────────────────────── */
+.health-ring {
+  text-align: center; padding: 10px 0;
+}
+
+.health-circle {
+  position: relative; width: 100px; height: 100px;
+  margin: 0 auto 10px;
+}
+
+.health-circle svg { transform: rotate(-90deg); }
+
+.health-circle-val {
+  position: absolute;
+  inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 700;
+  color: var(--battery);
+}
+
+/* ── Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 1100px) {
+  main {
+    grid-template-columns: 1fr 1fr;
+  }
+  .energy-status { grid-template-columns: repeat(2,1fr); }
+  .flow-section,
+  .charts-section,
+  .loads-section { grid-column: 1 / -1; }
+  .ai-panel { grid-column: 1 / -1; grid-row: auto; }
+  .loads-grid { grid-template-columns: repeat(3,1fr); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Nav ────────────────────────────────────────── -->
+<nav>
+  <div class="nav-brand">
+    <div class="dot"></div>
+    GridMind AI
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Dashboard</a>
+    <a href="controller.html">Remote Control</a>
+    <a href="manual.html">Manual Input</a>
+  </div>
+  <div class="nav-status">
+    <div class="live-dot"></div>
+    <span id="liveTime">—</span>
+  </div>
+</nav>
+
+<!-- ── Main ───────────────────────────────────────── -->
+<main>
+
+  <!-- Energy status row -->
+  <div class="energy-status">
+    <div class="card" style="border-top: 2px solid var(--solar)">
+      <div class="card-label">Solar Generation</div>
+      <div class="card-value" id="solarKw" style="color:var(--solar)">—</div>
+      <div class="card-sub">kilowatts now</div>
+      <div class="card-bar">
+        <div class="card-bar-fill" id="solarBar" style="background:var(--solar); width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 2px solid var(--battery)">
+      <div class="card-label">Battery Reserve</div>
+      <div class="card-value" id="batteryPct" style="color:var(--battery)">—</div>
+      <div class="card-sub" id="batteryStatus">—</div>
+      <div class="card-bar">
+        <div class="card-bar-fill" id="batteryBar" style="background:var(--battery); width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 2px solid var(--grid)">
+      <div class="card-label">Grid Import</div>
+      <div class="card-value" id="gridKw" style="color:var(--grid)">—</div>
+      <div class="card-sub" id="gridStatus">—</div>
+      <div class="card-bar">
+        <div class="card-bar-fill" id="gridBar" style="background:var(--grid); width:0%"></div>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 2px solid var(--demand)">
+      <div class="card-label">Building Demand</div>
+      <div class="card-value" id="demandKw" style="color:var(--demand)">—</div>
+      <div class="card-sub">total consumption</div>
+      <div class="card-bar">
+        <div class="card-bar-fill" id="demandBar" style="background:var(--demand); width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flow diagram -->
+  <div class="flow-section">
+    <div class="section-title">
+      <span class="section-title-icon">⚡</span> Energy Flow
+    </div>
+    <div class="flow-grid">
+      <div class="flow-sources">
+        <div class="flow-node">
+          <div class="flow-node-name">☀️ Solar Panels</div>
+          <div class="flow-node-val" id="flowSolar" style="color:var(--solar)">—</div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">🔋 Battery</div>
+          <div class="flow-node-val" id="flowBattery" style="color:var(--battery)">—</div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">⚡ Grid</div>
+          <div class="flow-node-val" id="flowGrid" style="color:var(--grid)">—</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">
+        <div>→</div>
+        <div class="flow-center-node">
+          <div class="flow-center-label">Building Bus</div>
+          <div class="flow-center-val" id="flowTotal">—</div>
+          <div class="flow-center-label" style="margin-top:4px">total kW</div>
+        </div>
+        <div>→</div>
+      </div>
+
+      <div class="flow-loads">
+        <div class="flow-node">
+          <div class="flow-node-name">❄️ AC System</div>
+          <div class="flow-node-val" id="flowAC" style="color:var(--demand)">—</div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">💻 Computer Labs</div>
+          <div class="flow-node-val" id="flowLab" style="color:var(--demand)">—</div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">🚗 EV Charging</div>
+          <div class="flow-node-val" id="flowEV" style="color:var(--demand)">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Panel -->
+  <div class="ai-panel">
+    <div>
+      <div class="ai-header">
+        <div class="section-title" style="margin-bottom:0">🤖 AI Decisions</div>
+        <div class="ai-badge">LIVE</div>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:4px">
+        Autonomous optimization engine
+      </div>
+    </div>
+
+    <!-- Health ring -->
+    <div class="health-ring">
+      <div class="health-circle">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none"
+            stroke="var(--surface2)" stroke-width="8"/>
+          <circle cx="50" cy="50" r="40" fill="none"
+            stroke="var(--battery)" stroke-width="8"
+            stroke-dasharray="251.2"
+            stroke-dashoffset="63"
+            stroke-linecap="round"
+            id="healthArc"/>
+        </svg>
+        <div class="health-circle-val" id="healthScore">—</div>
+      </div>
+      <div style="font-size:12px; color:var(--muted)">System health score</div>
+    </div>
+
+    <!-- Savings row -->
+    <div class="savings-row">
+      <div class="savings-pill">
+        <div class="savings-pill-val" id="savingsInr">₹0</div>
+        <div class="savings-pill-label">Saved today</div>
+      </div>
+      <div class="savings-pill">
+        <div class="savings-pill-val" id="solarUtil">0</div>
+        <div class="savings-pill-label">kWh solar used</div>
+      </div>
+      <div class="savings-pill">
+        <div class="savings-pill-val" id="gridSaved">0</div>
+        <div class="savings-pill-label">kWh grid avoided</div>
+      </div>
+    </div>
+
+    <!-- Tariff alert -->
+    <div id="tariffAlert" style="display:none;
+      background:rgba(224,90,90,.1); border:1px solid var(--grid);
+      border-radius:8px; padding:10px 12px;
+      font-size:12px; color:var(--grid);">
+      ⚠️ <strong>High tariff period active.</strong> Battery reserves being prioritised over grid draw.
+    </div>
+
+    <!-- Decision cards -->
+    <div id="decisionsContainer">
+      <div class="no-decisions">Analysing energy state…</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-section">
+    <div class="section-title">
+      <span class="section-title-icon">📈</span> Forecast & Live Telemetry
+    </div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="switchTab('forecast')">6-hr Forecast</button>
+      <button class="chart-tab" onclick="switchTab('live')">Live — Altitude & RPM</button>
+    </div>
+    <div id="forecastChart" style="height:220px">
+      <canvas id="fcChart"></canvas>
+    </div>
+    <div id="liveChart" style="height:220px; display:none">
+      <canvas id="lvChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Loads -->
+  <div class="loads-section">
+    <div class="section-title">
+      <span class="section-title-icon">🔌</span> Load Management
+    </div>
+    <div class="loads-grid">
+
+      <div class="load-card critical">
+        <div class="load-icon">🖥️</div>
+        <div class="load-name">Server Room</div>
+        <div class="load-kw" id="serverKw">0.8 kW</div>
+        <div class="load-priority critical">Critical</div>
+        <div class="load-toggle">
+          <span style="font-size:11px;color:var(--muted)">Always on</span>
+          <label class="toggle"><input type="checkbox" checked disabled><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="load-card flexible">
+        <div class="load-icon">🚗</div>
+        <div class="load-name">EV Charging</div>
+        <div class="load-kw">4.0 kW</div>
+        <div class="load-priority flexible">Flexible</div>
+        <div class="load-toggle">
+          <span style="font-size:11px;color:var(--muted)" id="evStatus">Active</span>
+          <label class="toggle">
+            <input type="checkbox" id="evToggle" checked onchange="sendCommand(this.checked?'ev_on':'ev_off')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="load-card important">
+        <div class="load-icon">💧</div>
+        <div class="load-name">Water Pump</div>
+        <div class="load-kw">2.0 kW</div>
+        <div class="load-priority important">Important</div>
+        <div class="load-toggle">
+          <span style="font-size:11px;color:var(--muted)" id="pumpStatus">Active</span>
+          <label class="toggle">
+            <input type="checkbox" id="pumpToggle" checked onchange="sendCommand(this.checked?'pump_on':'pump_off')">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="load-card important">
+        <div class="load-icon">❄️</div>
+        <div class="load-name">AC System</div>
+        <div class="load-kw" id="acKw">— kW</div>
+        <div class="load-priority important">Important</div>
+        <div class="load-toggle">
+          <button onclick="sendCommand('ac_decrease')"
+            style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">−</button>
+          <button onclick="sendCommand('ac_increase')"
+            style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px">+</button>
+        </div>
+      </div>
+
+      <div class="load-card flexible">
+        <div class="load-icon">💡</div>
+        <div class="load-name">Lighting</div>
+        <div class="load-kw" id="lightingKw">1.2 kW</div>
+        <div class="load-priority flexible">Flexible</div>
+        <div class="load-toggle">
+          <span style="font-size:11px;color:var(--muted)">Auto</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+// ── Charts setup ──────────────────────────────────
+const fcCtx = document.getElementById("fcChart").getContext("2d");
+const lvCtx = document.getElementById("lvChart").getContext("2d");
+
+const fcChart = new Chart(fcCtx, {
+  type: "line",
+  data: {
+    labels: [],
+    datasets: [
+      { label: "Solar (kW)", data: [], borderColor: "#f5c542",
+        backgroundColor: "rgba(245,197,66,.1)", tension: .4, fill: true, pointRadius: 3 },
+      { label: "Demand (kW)", data: [], borderColor: "#7c9fff",
+        backgroundColor: "rgba(124,159,255,.1)", tension: .4, fill: true, pointRadius: 3 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: "#6b7a99", font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: "#6b7a99", font: { size: 10 } }, grid: { color: "rgba(255,255,255,.04)" } },
+      y: { ticks: { color: "#6b7a99", font: { size: 10 } }, grid: { color: "rgba(255,255,255,.04)" } },
+    }
+  }
+});
+
+const liveLabels = [], liveGrid = [], liveSolar = [];
+const lvChart = new Chart(lvCtx, {
+  type: "line",
+  data: {
+    labels: liveLabels,
+    datasets: [
+      { label: "Grid (kW)", data: liveGrid, borderColor: "#e05a5a",
+        backgroundColor: "rgba(224,90,90,.08)", tension: .4, fill: true, pointRadius: 0 },
+      { label: "Solar (kW)", data: liveSolar, borderColor: "#f5c542",
+        backgroundColor: "rgba(245,197,66,.08)", tension: .4, fill: true, pointRadius: 0 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 0 },
+    plugins: { legend: { labels: { color: "#6b7a99", font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: "#6b7a99", font: { size: 10 }, maxTicksLimit: 8 },
+           grid: { color: "rgba(255,255,255,.04)" } },
+      y: { ticks: { color: "#6b7a99", font: { size: 10 } },
+           grid: { color: "rgba(255,255,255,.04)" } },
+    }
+  }
+});
+
+// ── Tab switching ─────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll(".chart-tab").forEach(b => b.classList.remove("active"));
+  event.target.classList.add("active");
+  document.getElementById("forecastChart").style.display = tab === "forecast" ? "block" : "none";
+  document.getElementById("liveChart").style.display = tab === "live" ? "block" : "none";
+}
+
+// ── Main update loop ──────────────────────────────
+let totalSavings = 0, totalSolarUtil = 0, totalGridSaved = 0;
+
+async function update() {
+  try {
+    const res  = await fetch(API + "/status");
+    const data = await res.json();
+
+    // Nav time
+    document.getElementById("liveTime").textContent =
+      new Date().toLocaleTimeString("en-IN");
+
+    // Status cards
+    document.getElementById("solarKw").textContent    = data.solar_kw.toFixed(1) + " kW";
+    document.getElementById("batteryPct").textContent  = data.battery_pct.toFixed(0) + "%";
+    document.getElementById("gridKw").textContent      = data.grid_kw.toFixed(1) + " kW";
+    document.getElementById("demandKw").textContent    = data.demand_kw.toFixed(1) + " kW";
+
+    document.getElementById("batteryStatus").textContent =
+      data.battery_pct > 70 ? "Fully charged" :
+      data.battery_pct > 40 ? "Sufficient reserve" : "⚠️ Low — charging priority";
+
+    document.getElementById("gridStatus").textContent =
+      data.tariff_high ? "⚠️ High tariff period" : "Normal rate";
+
+    // Bars
+    document.getElementById("solarBar").style.width    = Math.min(100, data.solar_kw / 15 * 100) + "%";
+    document.getElementById("batteryBar").style.width  = data.battery_pct + "%";
+    document.getElementById("gridBar").style.width     = Math.min(100, data.grid_kw / 10 * 100) + "%";
+    document.getElementById("demandBar").style.width   = Math.min(100, data.demand_kw / 15 * 100) + "%";
+
+    // Flow diagram
+    document.getElementById("flowSolar").textContent   = data.solar_kw.toFixed(1) + " kW";
+    document.getElementById("flowBattery").textContent = data.battery_pct.toFixed(0) + "%";
+    document.getElementById("flowGrid").textContent    = data.grid_kw.toFixed(1) + " kW";
+    document.getElementById("flowTotal").textContent   = data.demand_kw.toFixed(1);
+    document.getElementById("flowAC").textContent      = data.ac_kw.toFixed(1) + " kW";
+    document.getElementById("flowLab").textContent     = data.computer_lab_kw.toFixed(1) + " kW";
+    document.getElementById("flowEV").textContent      = data.ev_charging ? "4.0 kW" : "Paused";
+
+    // AI panel
+    document.getElementById("healthScore").textContent = data.health_score + "%";
+    const arc = document.getElementById("healthArc");
+    const circumference = 251.2;
+    arc.style.strokeDashoffset = circumference - (circumference * data.health_score / 100);
+
+    totalSavings    += data.savings_inr / 30;
+    totalSolarUtil  += data.solar_util_kwh / 30;
+    totalGridSaved  += data.grid_saved_kwh / 30;
+
+    document.getElementById("savingsInr").textContent  = "₹" + Math.round(totalSavings);
+    document.getElementById("solarUtil").textContent   = totalSolarUtil.toFixed(1);
+    document.getElementById("gridSaved").textContent   = totalGridSaved.toFixed(1);
+
+    document.getElementById("tariffAlert").style.display =
+      data.tariff_high ? "block" : "none";
+
+    // Decisions
+    const dc = document.getElementById("decisionsContainer");
+    if (data.decisions && data.decisions.length > 0) {
+      dc.innerHTML = data.decisions.map(d => `
+        <div class="ai-decision-card">
+          <div class="decision-action">${d.icon} ${d.action}</div>
+          <div class="decision-reason">${d.reason}</div>
+          <div class="decision-savings">${d.savings}</div>
+        </div>
+      `).join("");
+    } else {
+      dc.innerHTML = `<div class="no-decisions">✅ All systems optimal — no intervention needed</div>`;
+    }
+
+    // Load values
+    document.getElementById("acKw").textContent = data.ac_kw.toFixed(1) + " kW";
+
+    // Forecast chart
+    if (data.forecast) {
+      fcChart.data.labels   = data.forecast.map(f => f.time);
+      fcChart.data.datasets[0].data = data.forecast.map(f => f.solar);
+      fcChart.data.datasets[1].data = data.forecast.map(f => f.demand);
+      fcChart.update("none");
+    }
+
+    // Live chart
+    const now = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    liveLabels.push(now); liveGrid.push(data.grid_kw); liveSolar.push(data.solar_kw);
+    if (liveLabels.length > 40) { liveLabels.shift(); liveGrid.shift(); liveSolar.shift(); }
+    lvChart.update("none");
+
+  } catch(e) {
+    document.getElementById("liveTime").textContent = "⚠️ Backend offline";
+  }
+}
+
+// ── Commands ──────────────────────────────────────
+async function sendCommand(action) {
+  try {
+    const res = await fetch(API + "/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action })
+    });
+    const data = await res.json();
+    if (action === "ev_on" || action === "ev_off")
+      document.getElementById("evStatus").textContent = action === "ev_on" ? "Active" : "Paused";
+    if (action === "pump_on" || action === "pump_off")
+      document.getElementById("pumpStatus").textContent = action === "pump_on" ? "Active" : "Paused";
+  } catch(e) {}
+}
+
+setInterval(update, 2000);
+update();
+</script>
+</body>
+</html>
