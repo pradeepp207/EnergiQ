@@ -1,4 +1,4 @@
-# GridMind AI ⚡
+# EnergiQ ⚡
 ### Autonomous Energy Orchestration Platform
 
 ---
@@ -12,7 +12,7 @@ gridmind/
 │   └── requirements.txt   ← Python dependencies
 ├── frontend/
 │   ├── index.html         ← Main dashboard
-│   ├── controller.html    ← Remote control panel
+│   ├── remote.html    ← Remote control panel
 │   └── manual.html        ← Manual meter input
 └── README.md
 ```
@@ -78,7 +78,7 @@ http://localhost:3000/index.html
 - ✅ AI decisions panel showing recommendations
 - ✅ 6-hour solar forecast chart
 - ✅ Load toggles working (EV, pump)
-- ✅ Remote control at /controller.html
+- ✅ Remote control at /remote.html
 - ✅ Manual input at /manual.html
 
 ---
@@ -108,7 +108,7 @@ http://localhost:3000/index.html
 ```bash
 git init
 git add .
-git commit -m "GridMind AI initial commit"
+git commit -m "EnergiQ initial commit"
 # Create repo on github.com first, then:
 git remote add origin https://github.com/YOUR_USERNAME/gridmind.git
 git push -u origin main
